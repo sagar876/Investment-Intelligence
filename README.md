@@ -26,7 +26,7 @@ Requires Node 20.19+ (built with Node 24).
 4. **Verify** — select a finding: the evidence panel shows the AI rationale, verbatim excerpts with document + page, and evidence strength with its reason. Citation chips in the AI summary jump straight to the evidence.
 5. **Decide** — *Accept* (undoable toast), *Reject* (reason required, validated) or *Flag* (note + optional owner). Open the details drawer for tabs: Evidence / AI rationale / audit History.
 6. **Complete** — decide F-01, F-02, F-03 → *Submit to IC* unlocks (and pulses briefly); confirm with an explicit attestation.
-7. **New evidence** — *Upload documents* → *Use 3 sample documents*: per-file processing, a scanned PDF fails with a recoverable *Retry with OCR*, analysis adds a new High finding **F-07** that re-locks IC submission.
+7. **New evidence** — *Upload documents* → *Use 3 sample documents*: per-file processing, a scanned PDF fails with a recoverable *Retry with OCR*, and a **scripted** analysis of the sample contracts adds High finding **F-07**, which re-locks IC submission. Uploading your own file is honest about the demo: it is validated (type ≤ 50 MB) and listed as *Demo · not analysed*, and no findings are invented from it.
 8. **Demo states** menu (header) — replay loading + AI analysis, empty data room, chart data error, reset.
 
 ## Stack
@@ -82,9 +82,9 @@ Blue = human decisions and actions; teal/aqua = AI. Aqua (`#22D3C5`, 1.9:1 on wh
 | Web vitals (production build, local) | LCP ≈ 1.1–1.3 s · CLS ≈ 0.01 · TBT ≈ 8 ms desktop / ≈ 240 ms at 4× CPU throttle |
 | Bundle | critical JS ≈ 165 KB gzip; Recharts (106 KB) and overlays/forms (≈ 30 KB) lazy-loaded |
 | Responsive | no horizontal overflow at 390 / 834 / 1024 / 1280 / 1440 |
-| Tests | 11 reducer tests (review gate, flag semantics, submission lock, undo, audit trail, filters) |
+| Tests | 14 reducer tests (review gate, flag semantics, submission lock, undo, audit trail, uploads, filters) |
 
 ## Known limitations
 
-- Frontend-only; state resets on reload. Uploaded files are validated (type/size) but not parsed — processing outcomes are simulated deterministically.
+- Frontend-only; state resets on reload. All document contents and findings are hardcoded fictional data. Files you upload are validated (type/size) but never read; they appear as *Demo · not analysed*. Only the built-in sample documents produce a (scripted) finding, and its evidence cites the sample contract — never a file you supplied.
 - The Figma file was built before the brand pass; the starter-plan MCP call limit blocked the follow-up. [`docs/figma/rebrand-to-aurello.js`](docs/figma/rebrand-to-aurello.js) applies the aurelloai.com palette and type to every page in one call once access resets. Interaction-state and responsive frames are specified in the design doc and implemented in code.

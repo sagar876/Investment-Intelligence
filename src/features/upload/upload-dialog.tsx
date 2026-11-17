@@ -1,4 +1,4 @@
-import { Check, CircleAlert, CloudUpload, FileText, LoaderCircle, RefreshCw, Sparkles, X } from "lucide-react"
+import { Check, CircleAlert, CloudUpload, FileText, Info, LoaderCircle, RefreshCw, Sparkles, X } from "lucide-react"
 import { useEffect, useRef, useState, type DragEvent } from "react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
@@ -13,6 +13,10 @@ const ACCEPT = [".pdf", ".xlsx", ".docx"]
 const MAX_MB = 50
 
 interface QueuedFile {
+  /** Stable document id: the sample's id, or derived from the user's file name. */
+  id: string
+  /** sample = scripted demo document; user = viewer's own file (validated, never read). */
+  source: "sample" | "user"
   name: string
   size: string
   pages: number
@@ -26,19 +30,22 @@ type Stage = "select" | "processing" | "done"
 
 function fileLabel(f: QueuedFile): string {
   if (f.failed) return "Failed"
-  if (f.progress >= 100) return "Analysed"
   if (f.progress === 0) return "Queued"
+  if (f.source === "user") return f.progress >= 100 ? "Added · not analysed" : `Uploading · ${f.progress}%`
+  if (f.progress >= 100) return "Analysed (scripted)"
   if (f.progress < 45) return `Extracting text · ${f.progress}%`
   if (f.progress < 80) return `Cross-referencing · ${f.progress}%`
   return `Scoring risk · ${f.progress}%`
 }
 
-function toQueued(name: string, size: string, pages: number, fails: boolean): QueuedFile {
-  return { name, size, pages, failsFirstAttempt: fails, progress: 0, attempt: 1, failed: false }
+function toQueued(id: string, source: QueuedFile["source"], name: string, size: string, pages: number, fails: boolean): QueuedFile {
+  return { id, source, name, size, pages, failsFirstAttempt: fails, progress: 0, attempt: 1, failed: false }
 }
 
+const userDocId = (name: string) => `user-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`
+
 export function UploadDialog() {
-  const { dispatch } = useReview()
+  const { state, dispatch } = useReview()
   const { uploadOpen, setUploadOpen, openEvidence, restoreFocus } = useUi()
   const [stage, setStage] = useState<Stage>("select")
   const [files, setFiles] = useState<QueuedFile[]>([])
@@ -88,9 +95,8 @@ export function UploadDialog() {
       if (!ACCEPT.includes(ext)) errs.push(`${file.name}: unsupported type. Use PDF, XLSX or DOCX.`)
       else if (file.size > MAX_MB * 1024 * 1024) errs.push(`${file.name}: larger than ${MAX_MB} MB.`)
       else
-        ok.push(
-          toQueued(file.name, `${(file.size / 1024 / 1024).toFixed(1)} MB`, Math.max(1, Math.round(file.size / 90_000)), /scan/i.test(file.name)),
-        )
+        // A viewer's own file is never failed on purpose — scripted outcomes apply only to sample documents.
+        ok.push(toQueued(userDocId(file.name), "user", file.name, `${(file.size / 1024 / 1024).toFixed(1)} MB`, 0, false))
     }
     setErrors(errs)
     setFiles((prev) => [...prev, ...ok.filter((o) => !prev.some((p) => p.name === o.name))])
@@ -105,28 +111,42 @@ export function UploadDialog() {
   const retry = (name: string) =>
     setFiles((prev) => prev.map((f) => (f.name === name ? { ...f, failed: false, attempt: f.attempt + 1, progress: 10 } : f)))
 
+  const completed = files.filter((f) => f.progress >= 100)
+  const done = completed.length
+  const userCount = completed.filter((f) => f.source === "user").length
+  const sampleCount = done - userCount
+  // F-07 is scripted from the sample contracts file only, and only once.
+  const hasSampleContracts = completed.some((f) => f.id === UPLOAD_FINDING.evidence[0].documentId)
+  const alreadyHasF07 = state.findings.some((f) => f.id === UPLOAD_FINDING.id)
+  const addsFinding = hasSampleContracts && !alreadyHasF07
+
   const finish = () => {
-    const analysed = files.filter((f) => f.progress >= 100)
-    const docs: SourceDocument[] = analysed.map((f, i) => ({
-      id: `upload-${i}`,
+    const docs: SourceDocument[] = completed.map((f) => ({
+      id: f.id,
       title: f.name,
       shortTitle: f.name.replace(/\.[a-z]+$/i, "").replace(/_/g, " ").slice(0, 18),
       pages: f.pages,
       kind: f.name.endsWith(".xlsx") ? "xlsx" : f.name.endsWith(".docx") ? "docx" : "pdf",
       uploadedAt: "17 Nov 2026",
+      origin: f.source,
     }))
-    dispatch({ type: "add-documents", documents: docs, findings: [UPLOAD_FINDING] })
-    dispatch({ type: "set-phase", phase: "analysing" })
+    dispatch({ type: "add-documents", documents: docs, findings: addsFinding ? [UPLOAD_FINDING] : [] })
+    if (addsFinding) dispatch({ type: "set-phase", phase: "analysing" })
     setUploadOpen(false)
     reset()
-    toast.success(`${analysed.length} documents analysed`, {
-      description: "1 new High-severity finding needs review.",
-      action: { label: "Review F-07", onClick: () => openEvidence("F-07") },
-    })
+    if (addsFinding) {
+      toast.success(`${done} document${done === 1 ? "" : "s"} added`, {
+        description: "Scripted demo analysis raised 1 new High finding (F-07).",
+        action: { label: "Review F-07", onClick: () => openEvidence("F-07") },
+      })
+    } else {
+      toast.success(`${done} document${done === 1 ? "" : "s"} added to the data room`, {
+        description: userCount ? "Demo: file contents are not analysed, so no findings were created." : "No new findings.",
+      })
+    }
   }
 
-  const done = files.filter((f) => f.progress >= 100).length
-  const overall = files.length ? Math.round(files.reduce((s, f) => s + (f.failed ? f.progress : f.progress), 0) / files.length) : 0
+  const overall = files.length ? Math.round(files.reduce((s, f) => s + f.progress, 0) / files.length) : 0
   const failed = files.filter((f) => f.failed)
 
   return (
@@ -134,14 +154,16 @@ export function UploadDialog() {
       <DialogContent className="sm:max-w-[580px]" onCloseAutoFocus={restoreFocus}>
         <DialogHeader>
           <DialogTitle className="font-heading text-lg">
-            {stage === "select" ? "Upload documents" : stage === "processing" ? "Analysing documents" : "Analysis complete"}
+            {stage === "select" ? "Upload documents" : stage === "processing" ? "Processing documents" : "Ready to add"}
           </DialogTitle>
           <DialogDescription>
             {stage === "select"
-              ? "Add files to the Meridian data room. AI analysis starts when you confirm."
+              ? "Add files to the Meridian data room."
               : stage === "processing"
-                ? `${done} of ${files.length} documents analysed${failed.length ? ` · ${failed.length} needs attention` : ""}. You can keep working while this runs.`
-                : "New evidence has been cross-referenced against existing findings."}
+                ? `${done} of ${files.length} documents processed${failed.length ? ` · ${failed.length} needs attention` : ""}. You can keep working while this runs.`
+                : addsFinding
+                  ? "The scripted demo analysis cross-referenced the sample contracts against existing findings."
+                  : "Your documents are ready to add to the data room."}
           </DialogDescription>
         </DialogHeader>
 
@@ -174,6 +196,11 @@ export function UploadDialog() {
                   </button>
                 </p>
                 <p className="text-xs text-muted-foreground">PDF, XLSX, DOCX · up to {MAX_MB} MB each</p>
+                <p className="mt-1 flex items-start gap-1.5 text-left text-xs text-text-secondary">
+                  <Info aria-hidden className="mt-0.5 size-3.5 shrink-0 text-ai" />
+                  Demo: your files are validated and listed but never read — there is no AI backend. Use the sample documents to see a scripted
+                  analysis.
+                </p>
                 <input
                   ref={inputRef}
                   type="file"
@@ -199,7 +226,7 @@ export function UploadDialog() {
                 <Button
                   variant="ai"
                   className="self-start"
-                  onClick={() => setFiles(SAMPLE_UPLOADS.map((s) => toQueued(s.name, s.size, s.pages, s.failsFirstAttempt)))}
+                  onClick={() => setFiles(SAMPLE_UPLOADS.map((s) => toQueued(s.id, "sample", s.name, s.size, s.pages, s.failsFirstAttempt)))}
                 >
                   <Sparkles aria-hidden /> Use 3 sample documents (demo)
                 </Button>
@@ -209,6 +236,7 @@ export function UploadDialog() {
                     <li key={f.name} className="flex items-center gap-2.5 rounded-md border border-border px-3 py-2.5">
                       <FileText aria-hidden className="size-4 shrink-0 text-text-secondary" />
                       <span className="min-w-0 flex-1 truncate text-[13px]">{f.name}</span>
+                      {f.source === "sample" && <span className="text-[11px] font-medium text-ai">Sample</span>}
                       <span className="text-xs text-muted-foreground tabular">{f.size}</span>
                       <Button
                         variant="ghost"
@@ -227,7 +255,7 @@ export function UploadDialog() {
 
           {stage === "processing" && (
             <div key="processing" className="flex animate-fade-up flex-col gap-3">
-              <div role="progressbar" aria-label="Overall analysis progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={overall} className="h-1.5 overflow-hidden rounded-full bg-muted">
+              <div role="progressbar" aria-label="Overall progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={overall} className="h-1.5 overflow-hidden rounded-full bg-muted">
                 <div className="h-full rounded-full bg-[image:var(--gradient-brand)] transition-[width] duration-150 ease-linear" style={{ width: `${overall}%` }} />
               </div>
               <ul className="flex flex-col gap-2" aria-live="polite">
@@ -254,7 +282,12 @@ export function UploadDialog() {
                           <FileText aria-hidden className="size-4 shrink-0 text-muted-foreground" />
                         )}
                         <span className="min-w-0 flex-1 truncate text-[13px]">{f.name}</span>
-                        <span className={cn("text-xs tabular", f.failed ? "font-medium text-sev-critical" : ok ? "text-positive" : "text-muted-foreground")}>
+                        <span
+                          className={cn(
+                            "text-xs tabular",
+                            f.failed ? "font-medium text-sev-critical" : ok && f.source === "sample" ? "text-positive" : "text-muted-foreground",
+                          )}
+                        >
                           {fileLabel(f)}
                         </span>
                       </div>
@@ -265,7 +298,7 @@ export function UploadDialog() {
                       )}
                       {f.failed && (
                         <div className="flex items-center gap-2">
-                          <p className="flex-1 text-xs text-sev-critical">Scanned image with no text layer — OCR could not read pages 3–9.</p>
+                          <p className="flex-1 text-xs text-sev-critical">Scripted demo failure: scanned image with no text layer, so OCR could not read pages 3–9.</p>
                           <Button size="sm" variant="outline" onClick={() => retry(f.name)}>
                             <RefreshCw aria-hidden /> Retry with OCR
                           </Button>
@@ -280,16 +313,32 @@ export function UploadDialog() {
 
           {stage === "done" && (
             <div key="done" className="flex animate-pop flex-col gap-3">
-              <div className="flex items-start gap-3 rounded-md border border-ai-border bg-ai-subtle p-4">
-                <Sparkles aria-hidden className="mt-0.5 size-4 shrink-0 text-ai" />
-                <div className="text-sm">
-                  <p className="font-semibold text-foreground">{done} documents analysed · 1 new finding</p>
-                  <p className="mt-1 text-text-secondary">
-                    <span className="font-mono text-xs">F-07</span> {UPLOAD_FINDING.title} — <span className="font-medium text-sev-high">High</span>. It
-                    will need a decision before IC submission.
+              {addsFinding ? (
+                <div className="flex items-start gap-3 rounded-md border border-ai-border bg-ai-subtle p-4">
+                  <Sparkles aria-hidden className="mt-0.5 size-4 shrink-0 text-ai" />
+                  <div className="text-sm">
+                    <p className="font-semibold text-foreground">1 new finding from the sample contracts (scripted demo)</p>
+                    <p className="mt-1 text-text-secondary">
+                      <span className="font-mono text-xs">F-07</span> {UPLOAD_FINDING.title} — <span className="font-medium text-sev-high">High</span>.
+                      It will need a decision before IC submission.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-start gap-3 rounded-md border border-border bg-background p-4">
+                  <Info aria-hidden className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                  <p className="text-sm text-text-secondary">
+                    {hasSampleContracts && alreadyHasF07
+                      ? "No new findings — the sample contracts are already covered by F-07."
+                      : "No findings were created. This demo has no AI backend, so the contents of your files are not read."}
                   </p>
                 </div>
-              </div>
+              )}
+              {userCount > 0 && sampleCount > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  {userCount} of your file{userCount === 1 ? "" : "s"} will be listed as “Demo · not analysed”.
+                </p>
+              )}
             </div>
           )}
 
@@ -306,7 +355,7 @@ export function UploadDialog() {
                 Cancel
               </Button>
               <Button disabled={files.length === 0} onClick={() => setStage("processing")}>
-                <CloudUpload aria-hidden /> Upload &amp; analyse {files.length > 0 ? `${files.length} file${files.length === 1 ? "" : "s"}` : ""}
+                <CloudUpload aria-hidden /> Upload {files.length > 0 ? `${files.length} file${files.length === 1 ? "" : "s"}` : ""}
               </Button>
             </>
           )}
@@ -322,7 +371,7 @@ export function UploadDialog() {
               </Button>
             </>
           )}
-          {stage === "done" && <Button onClick={finish}>Add to data room &amp; review</Button>}
+          {stage === "done" && <Button onClick={finish}>{addsFinding ? "Add to data room & review" : "Add to data room"}</Button>}
         </DialogFooter>
       </DialogContent>
     </Dialog>

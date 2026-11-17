@@ -99,9 +99,10 @@ export function reviewReducer(state: ReviewState, action: ReviewAction): ReviewS
     case "add-documents": {
       const existing = new Set(state.findings.map((f) => f.id))
       const fresh = action.findings.filter((f) => !existing.has(f.id))
+      const knownDocs = new Set(state.documents.map((d) => d.id))
       return {
         ...state,
-        documents: [...action.documents, ...state.documents],
+        documents: [...action.documents.filter((d) => !knownDocs.has(d.id)), ...state.documents],
         findings: [...state.findings, ...fresh],
         scenario: { ...state.scenario, emptyDataRoom: false },
         selectedId: fresh[0]?.id ?? state.selectedId,

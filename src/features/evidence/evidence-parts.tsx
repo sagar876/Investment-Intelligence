@@ -48,7 +48,7 @@ export function EvidenceItem({ evidence, index }: { evidence: Evidence; index: n
     >
       <header className="flex items-start gap-2">
         <FileText aria-hidden className="mt-0.5 size-4 shrink-0 text-text-secondary" />
-        <p className="flex-1 text-[13px] font-medium text-foreground">{doc?.title ?? "Customer_Contracts_Top20.pdf"}</p>
+        <p className="flex-1 text-[13px] font-medium text-foreground">{doc?.title ?? "Unknown document"}</p>
         <span className="font-mono text-xs text-muted-foreground">p.{evidence.page}</span>
       </header>
       <blockquote className="mt-2.5 border-l-[3px] border-border-strong bg-background px-3 py-2 text-[13px] leading-5 text-text-secondary">

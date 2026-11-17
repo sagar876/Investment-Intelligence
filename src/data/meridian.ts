@@ -196,14 +196,17 @@ export const FINDINGS: Finding[] = [
   },
 ]
 
-/** Sample files offered by the upload dialog — deterministic processing outcome. */
+/**
+ * Sample files offered by the upload dialog. Their outcome is scripted:
+ * the contracts file yields F-07, the scanned lease demonstrates a recoverable failure.
+ */
 export const SAMPLE_UPLOADS = [
-  { name: "Customer_Contracts_Top20.pdf", size: "8.4 MB", pages: 64, failsFirstAttempt: false },
-  { name: "IT_Policy_Register_2024.docx", size: "1.2 MB", pages: 14, failsFirstAttempt: false },
-  { name: "Scanned_Lease_Agreement.pdf", size: "5.9 MB", pages: 9, failsFirstAttempt: true },
+  { id: "sample-contracts", name: "Customer_Contracts_Top20.pdf", size: "8.4 MB", pages: 64, failsFirstAttempt: false },
+  { id: "sample-it-policy", name: "IT_Policy_Register_2024.docx", size: "1.2 MB", pages: 14, failsFirstAttempt: false },
+  { id: "sample-lease", name: "Scanned_Lease_Agreement.pdf", size: "5.9 MB", pages: 9, failsFirstAttempt: true },
 ]
 
-/** Finding produced by analysing the sample upload (simulated). */
+/** Scripted finding produced only by the sample contracts file — never by a viewer's own upload. */
 export const UPLOAD_FINDING: Finding = {
   id: "F-07",
   title: "Change-of-control termination rights in 2 of the top-3 customer contracts",
@@ -213,10 +216,10 @@ export const UPLOAD_FINDING: Finding = {
   aiRationale:
     "The newly uploaded customer contracts contain change-of-control termination rights for two of the three largest customers. Combined with F-02, this creates a direct post-close revenue risk that should be addressed through consent letters before signing.",
   evidence: [
-    { id: "E-07a", documentId: "upload-0", page: 18, excerpt: "Clause 14.2: The Customer may terminate this Agreement upon ninety (90) days' written notice if the Supplier undergoes a change of control.", strength: "strong", score: 91, rationale: "Same clause found in 2 contracts" },
+    { id: "E-07a", documentId: "sample-contracts", page: 18, excerpt: "Clause 14.2: The Customer may terminate this Agreement upon ninety (90) days' written notice if the Supplier undergoes a change of control.", strength: "strong", score: 91, rationale: "Same clause found in 2 contracts" },
   ],
   status: "needs-review",
-  history: [{ at: "Just now", text: "Raised by AI analysis of uploaded documents (demo)" }],
+  history: [{ at: "Just now", text: "Raised by scripted demo analysis of the sample customer contracts" }],
   isNew: true,
 }
 

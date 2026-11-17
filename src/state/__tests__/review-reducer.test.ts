@@ -82,6 +82,29 @@ describe("audit trail & undo", () => {
   })
 })
 
+describe("uploads", () => {
+  const userDoc = { id: "user-board-pack-pdf", title: "board pack.pdf", shortTitle: "board pack", pages: 0, kind: "pdf" as const, uploadedAt: "17 Nov 2026", origin: "user" as const }
+
+  it("adds a user's own document without inventing findings", () => {
+    const before = createInitialState("ready")
+    const s = reviewReducer(before, { type: "add-documents", documents: [userDoc], findings: [] })
+    expect(s.documents[0]).toEqual(userDoc)
+    expect(s.findings).toHaveLength(before.findings.length)
+    expect(s.selectedId).toBe(before.selectedId)
+  })
+
+  it("does not duplicate documents or findings on a repeat upload", () => {
+    const once = reviewReducer(createInitialState("ready"), { type: "add-documents", documents: [userDoc], findings: [UPLOAD_FINDING] })
+    const twice = reviewReducer(once, { type: "add-documents", documents: [userDoc], findings: [UPLOAD_FINDING] })
+    expect(twice.documents.filter((d) => d.id === userDoc.id)).toHaveLength(1)
+    expect(twice.findings.filter((f) => f.id === "F-07")).toHaveLength(1)
+  })
+
+  it("scripted F-07 cites the sample contracts document, never a user file", () => {
+    expect(UPLOAD_FINDING.evidence.every((e) => e.documentId.startsWith("sample-"))).toBe(true)
+  })
+})
+
 describe("filters", () => {
   it("sorts by severity and combines status + category filters", () => {
     const base = createInitialState("ready")

@@ -11,6 +11,11 @@ export interface SourceDocument {
   pages: number
   kind: "pdf" | "xlsx" | "docx"
   uploadedAt: string
+  /**
+   * seed = original data room; sample = scripted demo upload;
+   * user = a real file the viewer chose — validated, but its contents are never read.
+   */
+  origin?: "seed" | "sample" | "user"
 }
 
 export interface Evidence {

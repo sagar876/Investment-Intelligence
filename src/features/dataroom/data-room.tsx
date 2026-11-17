@@ -47,8 +47,19 @@ export function DataRoom() {
                     <span className="min-w-0 flex-1 truncate text-[13px] text-foreground" title={d.title}>
                       {d.title}
                     </span>
-                    <span className="text-xs text-muted-foreground tabular">{d.pages} pp</span>
-                    <CircleCheck aria-label="Analysed" className="size-3.5 text-positive" />
+                    {d.origin === "user" ? (
+                      <span
+                        className="shrink-0 rounded-sm border border-border-strong px-1.5 py-0.5 text-[11px] text-muted-foreground"
+                        title="Demo: the file was validated and listed, but its contents were not read or analysed."
+                      >
+                        Demo · not analysed
+                      </span>
+                    ) : (
+                      <>
+                        <span className="text-xs text-muted-foreground tabular">{d.pages} pp</span>
+                        <CircleCheck aria-label="Analysed" className="size-3.5 text-positive" />
+                      </>
+                    )}
                   </li>
                 )
               })}
