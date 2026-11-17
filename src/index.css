@@ -301,6 +301,16 @@
   .on-dark :focus-visible {
     outline-color: var(--brand-aqua); /* 8.8:1 on night surfaces, matches aurelloai.com */
   }
+  /* Cursor consistency: every interactive control is a pointer; disabled ones say so; text fields keep the I-beam. */
+  :is(button, [role="button"], a[href], summary, label[for], select, [role="tab"], [role="menuitem"], [role="menuitemradio"], [role="menuitemcheckbox"], [role="option"], [role="switch"]):not(:disabled, [aria-disabled="true"], [data-disabled]) {
+    cursor: pointer;
+  }
+  :is(button, [role="button"], [role="menuitem"], [role="menuitemradio"], [role="menuitemcheckbox"], [role="option"]):is(:disabled, [aria-disabled="true"], [data-disabled]) {
+    cursor: not-allowed;
+  }
+  [data-pending] :is(button, [role="button"]):disabled {
+    cursor: progress;
+  }
   ::selection {
     background: rgb(34 211 197 / 0.28);
   }
