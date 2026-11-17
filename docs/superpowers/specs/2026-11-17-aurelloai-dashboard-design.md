@@ -211,3 +211,17 @@ Reviewed against the 1440 composition screenshots.
 9. *Sticky header vs focus (2.4.11):* set `scroll-padding-top` to header height.
 
 **States & responsive** (not drawn in Figma, specified here and built in code with the same components): details drawer (Sheet, 480px), upload dialog, processing with per-file status + failed-file Retry, reject dialog (reason ≥ 10 chars), flag dialog (note + optional owner), submit-to-IC confirmation, undo toast, empty (no docs / no filter match), skeleton loading, chart error → table fallback. Tablet 834: 8-col, analysis columns stack, evidence opens in drawer. Mobile 390: single column, KPI 2×2, findings as cards, evidence in bottom sheet.
+
+## 17. Implementation decisions (2026-11-17, after Figma)
+
+**Brand alignment.** Palette and type were extracted from aurelloai.com's CSS custom properties and embedded logo (see README "Brand"). This supersedes the provisional palette in §10: ink `#0A1F3D`, blue `#0B3A7A`, teal `#0A8794`, aqua `#22D3C5`, night `#07142A`; type Outfit (display) + Instrument Sans (body). The violet AI colour from the first Figma pass is replaced by the brand teal family — blue now means *human action*, teal means *AI*. Pending Figma update: `docs/figma/rebrand-to-aurello.js`.
+
+**Visual direction change vs. the Figma desktop frame.** The header + company overview sit on a dark brand "night" band with slow ambient light (echoing aurelloai.com), with KPI cards layered over its edge. Everything below stays light for readability. Section order, hierarchy and components match the approved Figma frame.
+
+**Motion.** Native CSS only (per direction): transitions for hover/press/progress; keyframes for staggered entrances, sparkline/gauge stroke drawing, risk-bar growth, status pops, evidence slide-in, AI-processing indicator. Stagger inputs are `@property`-registered with `inherits: false` so delays never cascade. Loops only on loading/processing indicators, a 3-iteration pulse when IC submission unlocks, and a 28–40 s ambient drift. Reduced motion zeroes durations *and* delays.
+
+**Load behaviour.** A normal visit shows a 650 ms skeleton then the already-analysed assessment (LCP ≈ 1.1 s). The animated AI-analysis phase plays only after uploading documents or via *Demo states → Replay*, which is also more truthful: the assessment was last analysed at 09:42.
+
+**Design-review issues (§16) — resolution.** 1 confidence shown as text, not a pill · 2 single primary Upload in header, data room keeps an empty-state CTA · 3 Submit uses `aria-disabled` + `aria-describedby` · 4 risk rows are `aria-pressed` toggles with a selected style · 5 titles clamp to 2 lines with full title in `title` + drawer · 6 evidence panel is sticky with internal scroll · 7 header progressively collapses (product name ≥1280, upload label ≥1024, analyst name ≥1536) · 8 DOM order = visual order, selection announced via `aria-live` · 9 `scroll-padding-top` set.
+
+**Accessibility fixes found by axe during QA.** Translucent sticky header lost contrast over light content → made solid; inactive tab text 4.25:1 → muted token 4.6:1; invalid `<dl>` structure; selector accessible-name mismatch; demo notice placed in an `aside` landmark; focus restoration added for programmatically opened overlays.
