@@ -1,4 +1,5 @@
 import { CircleCheck, Info, Lock, Send, Sparkles } from "lucide-react"
+import { Reserve } from "@/components/common/reserve"
 import { Button } from "@/components/ui/button"
 import { stagger } from "@/lib/stagger"
 import { COMPANY, DATA_ROOM_TOTAL, RECOMMENDATION } from "@/data/meridian"
@@ -121,13 +122,20 @@ export function CompanyOverview() {
                 ["Headquarters", `${COMPANY.city}, ${COMPANY.country}`],
                 ["Industry", COMPANY.industry],
                 ["Assessment period", COMPANY.period],
-                ["Data room", empty ? "No documents yet" : `${DATA_ROOM_TOTAL} documents · analysed`],
               ].map(([k, v]) => (
                 <div key={k}>
                   <dt className="text-xs text-[#A9BDD1]">{k}</dt>
                   <dd className="mt-0.5 text-sm font-medium text-[#EAF2F8]">{v}</dd>
                 </div>
               ))}
+              <div>
+                <dt className="text-xs text-[#A9BDD1]">Data room</dt>
+                <dd className="mt-0.5 text-sm font-medium text-[#EAF2F8]">
+                  <Reserve active={empty} ghost={`${DATA_ROOM_TOTAL} documents · analysed`}>
+                    No documents yet
+                  </Reserve>
+                </dd>
+              </div>
             </dl>
           </div>
           <div className="animate-fade-up" style={stagger(3)}>
@@ -151,27 +159,28 @@ export function CompanyOverview() {
                 <Sparkles aria-hidden className="size-3" /> AI-suggested · Demo data
               </span>
             </div>
-            {state.phase !== "ready" ? (
-              <div className="mt-4 space-y-2" aria-hidden>
-                <div className="ai-shimmer h-7 w-3/4 animate-shimmer rounded-md bg-white/8" />
-                <div className="ai-shimmer h-4 w-full animate-shimmer rounded bg-white/6" />
-                <div className="ai-shimmer h-4 w-5/6 animate-shimmer rounded bg-white/6" />
-              </div>
-            ) : (
-              <>
-                <p className="mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                  <span className="font-heading text-2xl font-semibold tracking-tight text-white">
-                    {empty ? "Awaiting documents" : RECOMMENDATION.verdict}
-                  </span>
-                  {!empty && <span className="text-sm text-[#A9BDD1]">Confidence: {RECOMMENDATION.confidence}</span>}
-                </p>
+            {/* Same structure in every state: shimmer bars while loading, empty copy laid over the populated size. */}
+            <div data-pending={state.phase !== "ready" || undefined} aria-busy={state.phase !== "ready" || undefined}>
+              <Reserve
+                active={empty}
+                ghost={
+                  <>
+                    <p className="mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                      <span className="sk font-heading text-2xl font-semibold tracking-tight text-white">{RECOMMENDATION.verdict}</span>
+                      <span className="sk text-sm text-[#A9BDD1]">Confidence: {RECOMMENDATION.confidence}</span>
+                    </p>
+                    <p className="mt-2 text-sm leading-relaxed text-[#C9D6E3]">
+                      <span className="sk">{RECOMMENDATION.rationale}</span>
+                    </p>
+                  </>
+                }
+              >
+                <p className="mt-3 font-heading text-2xl font-semibold tracking-tight text-white">Awaiting documents</p>
                 <p className="mt-2 text-sm leading-relaxed text-[#C9D6E3]">
-                  {empty
-                    ? "Upload the data room to generate an AI-suggested recommendation for human review."
-                    : RECOMMENDATION.rationale}
+                  Upload the data room to generate an AI-suggested recommendation for human review.
                 </p>
-              </>
-            )}
+              </Reserve>
+            </div>
             <div className="mt-5 border-t border-white/10 pt-4">
               <ReviewGate />
             </div>

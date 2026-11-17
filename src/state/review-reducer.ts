@@ -33,6 +33,7 @@ export type ReviewAction =
   | { type: "decide"; id: string; status: ReviewStatus; reason?: string; assignee?: string; by: string; at: string }
   | { type: "restore-finding"; finding: Finding }
   | { type: "add-documents"; documents: SourceDocument[]; findings: Finding[] }
+  | { type: "analyse-documents"; findings: Finding[] }
   | { type: "submit"; at: string }
   | { type: "set-scenario"; scenario: Partial<Scenario> }
   | { type: "reset" }
@@ -105,6 +106,23 @@ export function reviewReducer(state: ReviewState, action: ReviewAction): ReviewS
         documents: [...action.documents.filter((d) => !knownDocs.has(d.id)), ...state.documents],
         findings: [...state.findings, ...fresh],
         scenario: { ...state.scenario, emptyDataRoom: false },
+        selectedId: fresh[0]?.id ?? state.selectedId,
+      }
+    }
+    case "analyse-documents": {
+      // Simulated analysis of every uploaded document that is waiting. Sample documents become "analysed";
+      // a viewer's own files are marked "not-read" because their contents are never parsed in this demo.
+      const waiting = state.documents.some((d) => d.status === "ready")
+      if (!waiting) return state
+      const existing = new Set(state.findings.map((f) => f.id))
+      const fresh = action.findings.filter((f) => !existing.has(f.id))
+      return {
+        ...state,
+        phase: "analysing",
+        documents: state.documents.map((d) =>
+          d.status === "ready" ? { ...d, status: d.origin === "user" ? ("not-read" as const) : ("analysed" as const) } : d,
+        ),
+        findings: [...state.findings, ...fresh],
         selectedId: fresh[0]?.id ?? state.selectedId,
       }
     }

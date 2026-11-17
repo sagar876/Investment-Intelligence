@@ -227,6 +227,28 @@
   initial-value: 1;
 }
 
+/*
+ * In-place skeletons: inside [data-pending], elements marked .sk keep their real text (so line count and
+ * height match the populated layout at every breakpoint) but render it as shimmering bars.
+ */
+[data-pending] .sk {
+  color: transparent !important;
+  border-radius: 4px;
+  background-image: linear-gradient(90deg, var(--muted) 0%, #f5f9fb 50%, var(--muted) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s linear infinite;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  user-select: none;
+}
+[data-pending] .sk *,
+[data-pending] .sk-hide {
+  visibility: hidden;
+}
+.on-dark [data-pending] .sk {
+  background-image: linear-gradient(90deg, rgb(255 255 255 / 0.07) 0%, rgb(255 255 255 / 0.14) 50%, rgb(255 255 255 / 0.07) 100%);
+}
+
 @utility tabular {
   font-variant-numeric: tabular-nums;
 }

@@ -197,13 +197,14 @@ export const FINDINGS: Finding[] = [
 ]
 
 /**
- * Sample files offered by the upload dialog. Their outcome is scripted:
- * the contracts file yields F-07, the scanned lease demonstrates a recoverable failure.
+ * Sample files offered by the upload dialog (simulated). Sizes are large enough to show background progress.
+ * The contracts file yields the scripted F-07 after analysis; the scanned lease simulates an interrupted
+ * connection on its first attempt so the retry flow can be demonstrated.
  */
 export const SAMPLE_UPLOADS = [
-  { id: "sample-contracts", name: "Customer_Contracts_Top20.pdf", size: "8.4 MB", pages: 64, failsFirstAttempt: false },
-  { id: "sample-it-policy", name: "IT_Policy_Register_2024.docx", size: "1.2 MB", pages: 14, failsFirstAttempt: false },
-  { id: "sample-lease", name: "Scanned_Lease_Agreement.pdf", size: "5.9 MB", pages: 9, failsFirstAttempt: true },
+  { id: "sample-contracts", name: "Customer_Contracts_Top20.pdf", bytes: 24_600_000, pages: 64, failAt: undefined as number | undefined },
+  { id: "sample-it-policy", name: "IT_Policy_Register_2024.docx", bytes: 3_100_000, pages: 14, failAt: undefined as number | undefined },
+  { id: "sample-lease", name: "Scanned_Lease_Agreement.pdf", bytes: 11_800_000, pages: 9, failAt: 42 as number | undefined },
 ]
 
 /** Scripted finding produced only by the sample contracts file — never by a viewer's own upload. */

@@ -3,15 +3,20 @@ import { TooltipProvider } from "@/components/ui/tooltip"
 import { DashboardPage } from "@/features/dashboard/dashboard-page"
 import { ReviewProvider } from "@/state/review-context"
 import { UiProvider } from "@/state/ui-context"
+import { UploadProvider } from "@/state/upload-context"
+import { DESKTOP_QUERY, useMediaQuery } from "@/hooks/use-media-query"
 
 export default function App() {
+  // Toasts sit top-centre below lg so they never collide with the docked upload panel.
+  const wide = useMediaQuery(DESKTOP_QUERY)
   return (
     <TooltipProvider delayDuration={250}>
           <ReviewProvider>
             <UiProvider>
+              <UploadProvider>
               <DashboardPage />
               <Toaster
-                position="bottom-right"
+                position={wide ? "bottom-right" : "top-center"}
                 closeButton
                 toastOptions={{
                   classNames: {
@@ -21,6 +26,7 @@ export default function App() {
                   },
                 }}
               />
+              </UploadProvider>
             </UiProvider>
           </ReviewProvider>
     </TooltipProvider>

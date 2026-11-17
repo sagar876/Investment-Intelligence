@@ -1,4 +1,5 @@
 import { Info, TrendingDown, TrendingUp } from "lucide-react"
+import { Reserve } from "@/components/common/reserve"
 import { stagger } from "@/lib/stagger"
 import { FINANCIALS, KPIS } from "@/data/meridian"
 import { cn } from "@/lib/utils"
@@ -65,25 +66,38 @@ function KpiTile({ kpi, index, empty }: { kpi: Kpi; index: number; empty: boolea
           className="absolute inset-x-0 top-0 h-[2px] origin-left scale-x-0 bg-[image:var(--gradient-brand)] transition-transform duration-500 group-hover:scale-x-100"
         />
         <h3 id={`kpi-${kpi.id}`} className="font-sans text-[11px] font-semibold tracking-[0.08em] text-muted-foreground uppercase">
-          {kpi.label}
+          <span className="sk">{kpi.label}</span>
         </h3>
         <div className="mt-1 flex items-end justify-between gap-2">
           <p className="font-heading text-[28px] leading-9 font-semibold tracking-tight text-foreground tabular">
-            {empty ? <span className="text-muted-foreground">—</span> : format(kpi)(kpi.value)}
+            {empty ? <span className="text-muted-foreground">—</span> : <span className="sk">{format(kpi)(kpi.value)}</span>}
           </p>
-          {series && !empty && <Sparkline values={series} tone={kpi.trend === "positive" ? "positive" : "negative"} />}
+          {series && !empty && <span className="sk-hide">
+            <Sparkline values={series} tone={kpi.trend === "positive" ? "positive" : "negative"} />
+          </span>}
         </div>
-        {empty ? (
-          <p className="mt-1 text-xs text-muted-foreground">Awaiting financial statements</p>
-        ) : (
-          <>
+        {/* Two text lines in every state so tiles never change height. */}
+        <Reserve
+          active={empty}
+          ghost={
             <p className={cn("mt-1 flex items-center gap-1 text-xs font-medium", t.cls)}>
-              <Icon aria-hidden className="size-3.5" />
-              {kpi.delta}
+              <Icon aria-hidden className="sk-hide size-3.5 shrink-0" />
+              <span className="sk">{kpi.delta}</span>
             </p>
-            <p className="mt-1 text-xs text-muted-foreground">{kpi.footnote}</p>
-          </>
-        )}
+          }
+        >
+          <p className="mt-1 text-xs font-medium text-muted-foreground">No data yet</p>
+        </Reserve>
+        <Reserve
+          active={empty}
+          ghost={
+            <p className="mt-1 text-xs text-muted-foreground">
+              <span className="sk">{kpi.footnote}</span>
+            </p>
+          }
+        >
+          <p className="mt-1 text-xs text-muted-foreground">Awaiting accounts</p>
+        </Reserve>
       </article>
     </div>
   )
@@ -97,7 +111,11 @@ export function FinancialSnapshot() {
       <h2 id="snapshot-title" className="sr-only">
         Financial snapshot
       </h2>
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4 xl:gap-6">
+      <div
+        data-pending={state.phase === "loading" || undefined}
+        aria-busy={state.phase === "loading" || undefined}
+        className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4 xl:gap-6"
+      >
         {KPIS.map((k, i) => (
           <KpiTile key={k.id} kpi={k} index={i} empty={empty} />
         ))}

@@ -11,15 +11,17 @@ export function FindingHeading({ finding, as: Tag = "h3" }: { finding: Finding; 
   return (
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap items-center gap-2 text-xs">
-        <SeverityBadge severity={finding.severity} />
-        <span className="text-text-secondary">{CATEGORY_LABEL[finding.category]}</span>
-        <span aria-hidden className="text-muted-foreground">·</span>
-        <span className="font-mono text-muted-foreground">{finding.id}</span>
+        <SeverityBadge className="sk" severity={finding.severity} />
+        <span className="sk text-text-secondary">{CATEGORY_LABEL[finding.category]}</span>
+        <span aria-hidden className="sk-hide text-muted-foreground">·</span>
+        <span className="sk font-mono text-muted-foreground">{finding.id}</span>
         <span className="ml-auto">
-          <StatusBadge status={finding.status} />
+          <StatusBadge className="sk" status={finding.status} />
         </span>
       </div>
-      <Tag className="font-heading text-lg leading-snug font-semibold text-foreground">{finding.title}</Tag>
+      <Tag className="font-heading text-lg leading-snug font-semibold text-foreground">
+        <span className="sk">{finding.title}</span>
+      </Tag>
     </div>
   )
 }
@@ -32,7 +34,9 @@ export function AiRationale({ finding }: { finding: Finding }) {
         <Sparkles aria-hidden className="size-3" /> Why the AI flagged this
         <span className="font-normal tracking-normal normal-case text-ai/90">· AI-generated · Demo data</span>
       </p>
-      <p className="mt-1.5 text-[13px] leading-5 text-foreground">{finding.aiRationale}</p>
+      <p className="mt-1.5 text-[13px] leading-5 text-foreground">
+        <span className="sk">{finding.aiRationale}</span>
+      </p>
     </div>
   )
 }
@@ -48,15 +52,17 @@ export function EvidenceItem({ evidence, index }: { evidence: Evidence; index: n
     >
       <header className="flex items-start gap-2">
         <FileText aria-hidden className="mt-0.5 size-4 shrink-0 text-text-secondary" />
-        <p className="flex-1 text-[13px] font-medium text-foreground">{doc?.title ?? "Unknown document"}</p>
-        <span className="font-mono text-xs text-muted-foreground">p.{evidence.page}</span>
+        <p className="flex-1 text-[13px] font-medium text-foreground">
+          <span className="sk">{doc?.title ?? "Unknown document"}</span>
+        </p>
+        <span className="sk font-mono text-xs text-muted-foreground">p.{evidence.page}</span>
       </header>
       <blockquote className="mt-2.5 border-l-[3px] border-border-strong bg-background px-3 py-2 text-[13px] leading-5 text-text-secondary">
-        “{evidence.excerpt}”
+        <span className="sk">“{evidence.excerpt}”</span>
       </blockquote>
       <footer className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1">
-        <EvidenceStrengthMeter strength={evidence.strength} score={evidence.score} />
-        <span className="text-xs text-muted-foreground">{evidence.rationale}</span>
+        <EvidenceStrengthMeter className="sk" strength={evidence.strength} score={evidence.score} />
+        <span className="sk text-xs text-muted-foreground">{evidence.rationale}</span>
       </footer>
     </article>
   )
@@ -66,6 +72,7 @@ export function DecisionBar({ finding, layout = "panel" }: { finding: Finding; l
   const { state } = useReview()
   const { accept, requestDecision } = useUi()
   const locked = Boolean(state.submittedAt)
+  const pending = state.phase !== "ready"
 
   if (locked) {
     return (
@@ -79,13 +86,13 @@ export function DecisionBar({ finding, layout = "panel" }: { finding: Finding; l
     <div className="flex flex-col gap-2.5">
       {layout === "panel" && <p className="text-[11px] font-semibold tracking-[0.08em] text-muted-foreground uppercase">Your decision</p>}
       <div className="flex flex-wrap gap-2">
-        <Button onClick={() => accept(finding.id)} disabled={finding.status === "accepted"}>
+        <Button onClick={() => accept(finding.id)} disabled={pending || finding.status === "accepted"}>
           <Check aria-hidden /> {finding.status === "accepted" ? "Accepted" : "Accept finding"}
         </Button>
-        <Button variant="destructive" onClick={() => requestDecision(finding.id, "reject")} disabled={finding.status === "rejected"}>
+        <Button variant="destructive" onClick={() => requestDecision(finding.id, "reject")} disabled={pending || finding.status === "rejected"}>
           <X aria-hidden /> Reject
         </Button>
-        <Button variant="outline" onClick={() => requestDecision(finding.id, "flag")}>
+        <Button variant="outline" onClick={() => requestDecision(finding.id, "flag")} disabled={pending}>
           <Flag aria-hidden /> {finding.status === "flagged" ? "Update flag" : "Flag for follow-up"}
         </Button>
       </div>

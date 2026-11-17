@@ -100,6 +100,19 @@ describe("uploads", () => {
     expect(twice.findings.filter((f) => f.id === "F-07")).toHaveLength(1)
   })
 
+  it("analysis marks samples analysed, user files not-read, and adds F-07 only when supplied", () => {
+    const sample = { ...userDoc, id: "sample-contracts", title: "Customer_Contracts_Top20.pdf", origin: "sample" as const, status: "ready" as const }
+    const mine = { ...userDoc, status: "ready" as const }
+    const s0 = reviewReducer(createInitialState("ready"), { type: "add-documents", documents: [sample, mine], findings: [] })
+    const s1 = reviewReducer(s0, { type: "analyse-documents", findings: [UPLOAD_FINDING] })
+    expect(s1.phase).toBe("analysing")
+    expect(s1.documents.find((d) => d.id === "sample-contracts")?.status).toBe("analysed")
+    expect(s1.documents.find((d) => d.id === mine.id)?.status).toBe("not-read")
+    expect(s1.findings.some((f) => f.id === "F-07")).toBe(true)
+    // nothing left waiting → a second run is a no-op
+    expect(reviewReducer(s1, { type: "analyse-documents", findings: [UPLOAD_FINDING] })).toBe(s1)
+  })
+
   it("scripted F-07 cites the sample contracts document, never a user file", () => {
     expect(UPLOAD_FINDING.evidence.every((e) => e.documentId.startsWith("sample-"))).toBe(true)
   })

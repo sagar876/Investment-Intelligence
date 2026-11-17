@@ -16,6 +16,12 @@ export interface SourceDocument {
    * user = a real file the viewer chose — validated, but its contents are never read.
    */
   origin?: "seed" | "sample" | "user"
+  /**
+   * Lifecycle after upload: ready = uploaded, waiting for the (simulated) analysis;
+   * analysed = included in analysis; not-read = analysis ran but a viewer's file contents are never read in this demo.
+   * Undefined for the seed data room (already analysed).
+   */
+  status?: "ready" | "analysed" | "not-read"
 }
 
 export interface Evidence {

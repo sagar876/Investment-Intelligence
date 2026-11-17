@@ -14,6 +14,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { ANALYST, LAST_UPDATED } from "@/data/meridian"
 import { useReview } from "@/state/review-context"
 import { useUi } from "@/state/ui-context"
+import { useUploads } from "@/state/upload-context"
 import { CompanySelector } from "./company-selector"
 
 export function BrandLogo() {
@@ -54,6 +55,7 @@ function AssessmentStatus() {
 
 function DemoMenu() {
   const { state, dispatch } = useReview()
+  const { networkFailureNext, setNetworkFailureNext, clearFinished } = useUploads()
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
@@ -84,8 +86,17 @@ function DemoMenu() {
         >
           Chart data error
         </DropdownMenuCheckboxItem>
+        <DropdownMenuCheckboxItem checked={networkFailureNext} onCheckedChange={(v) => setNetworkFailureNext(Boolean(v))}>
+          Simulate network failure on next upload
+        </DropdownMenuCheckboxItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem variant="destructive" onSelect={() => dispatch({ type: "reset" })}>
+        <DropdownMenuItem
+          variant="destructive"
+          onSelect={() => {
+            clearFinished()
+            dispatch({ type: "reset" })
+          }}
+        >
           Reset all review decisions
         </DropdownMenuItem>
       </DropdownMenuContent>

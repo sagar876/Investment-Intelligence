@@ -6,7 +6,7 @@ import { ANALYSE_MS } from "@/state/review-context"
 const STEPS = ["Reading data-room documents", "Extracting financial statements", "Cross-referencing evidence", "Scoring risk categories", "Drafting executive summary"]
 
 /** Animated AI-analysis indicator. Step changes are announced politely to screen readers. */
-export function AiAnalysisProgress({ compact = false }: { compact?: boolean }) {
+export function AiAnalysisProgress({ compact = false, fill = false }: { compact?: boolean; fill?: boolean }) {
   const [step, setStep] = useState(0)
   useEffect(() => {
     const id = window.setInterval(() => setStep((s) => Math.min(s + 1, STEPS.length - 1)), ANALYSE_MS / STEPS.length)
@@ -14,7 +14,7 @@ export function AiAnalysisProgress({ compact = false }: { compact?: boolean }) {
   }, [])
 
   return (
-    <div className="relative overflow-hidden rounded-md border border-ai-border/60 bg-ai-subtle/60 p-4">
+    <div className={cn("relative flex flex-col justify-center overflow-hidden rounded-md border border-ai-border/60 bg-ai-subtle/60 p-4", fill && "w-full")}>
       <div aria-hidden className="ai-shimmer absolute inset-0 animate-shimmer" />
       <div className="relative flex items-center gap-3">
         <span aria-hidden className="relative grid size-9 place-items-center">

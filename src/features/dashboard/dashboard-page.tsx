@@ -10,8 +10,8 @@ import { FinancialPerformance } from "@/features/financials/financial-performanc
 import { FinancialSnapshot } from "@/features/kpis/financial-snapshot"
 import { RiskAssessment } from "@/features/risk/risk-assessment"
 import { stagger } from "@/lib/stagger"
+import { UploadActivityPanel } from "@/features/upload/upload-activity-panel"
 import { useReview } from "@/state/review-context"
-import { BodySkeleton } from "./dashboard-skeleton"
 
 // Overlays are only needed after interaction — split them (and react-hook-form/zod) out of the critical bundle.
 const FindingDrawer = lazy(() => import("@/features/evidence/finding-drawer").then((m) => ({ default: m.FindingDrawer })))
@@ -49,12 +49,9 @@ export function DashboardPage() {
       </div>
 
       <main id="main" tabIndex={-1} className={`${container} relative z-10 -mt-14 pb-16 outline-none lg:-mt-16`} aria-busy={loading}>
-        {loading ? (
-          <div key="skeleton">
-            <p className="sr-only" role="status">Loading assessment…</p>
-            <BodySkeleton />
-          </div>
-        ) : (
+        <p className="sr-only" role="status">
+          {loading ? "Loading assessment…" : ""}
+        </p>
           <div key="content" className="flex flex-col gap-6">
               <FinancialSnapshot />
 
@@ -78,7 +75,6 @@ export function DashboardPage() {
                 </div>
               </div>
           </div>
-        )}
       </main>
 
       <footer className="border-t border-border bg-card">
@@ -88,6 +84,7 @@ export function DashboardPage() {
         </div>
       </footer>
 
+      <UploadActivityPanel />
       <Suspense fallback={null}>
         <FindingDrawer />
         <DecisionDialog />

@@ -2,16 +2,16 @@ import { createColumnHelper, tableFeatures, useTable } from "@tanstack/react-tab
 import { PanelRight, SearchX, Sparkles } from "lucide-react"
 import { useMemo } from "react"
 import { CitationChip, SeverityBadge, StatusBadge } from "@/components/common/badges"
+import { Reserve } from "@/components/common/reserve"
 import { SectionCard } from "@/components/common/section-card"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Skeleton } from "@/components/ui/skeleton"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { CATEGORY_LABEL, findDocument } from "@/lib/labels"
 import { stagger } from "@/lib/stagger"
 import { cn } from "@/lib/utils"
 import { useReview } from "@/state/review-context"
-import { activeFindings, needsReviewCount, visibleFindings, type CategoryFilter, type StatusFilter } from "@/state/review-reducer"
+import { activeFindings, needsReviewCount, SEVERITY_ORDER, visibleFindings, type CategoryFilter, type StatusFilter } from "@/state/review-reducer"
 import { useUi } from "@/state/ui-context"
 import type { Finding, RiskCategory } from "@/types/domain"
 
@@ -32,12 +32,13 @@ function FindingTitle({ f, compact }: { f: Finding; compact?: boolean }) {
     <div className="min-w-0">
       <button
         type="button"
+        disabled={state.phase !== "ready"}
         onClick={() => openEvidence(f.id)}
         aria-current={selected ? "true" : undefined}
-        className="cursor-pointer text-left text-sm leading-5 font-medium text-foreground after:absolute after:inset-0 after:content-[''] focus-visible:outline-none"
+        className="cursor-pointer text-left text-sm leading-5 font-medium text-foreground after:absolute after:inset-0 after:content-[''] focus-visible:outline-none disabled:cursor-default"
       >
         <span className={cn(!compact && "line-clamp-2")} title={f.title}>
-          {f.title}
+          <span className="sk">{f.title}</span>
         </span>
         {f.isNew && (
           <span className="ml-1.5 inline-flex translate-y-[-1px] items-center gap-0.5 rounded-sm bg-ai-subtle px-1.5 text-[10px] font-semibold tracking-wide text-ai uppercase">
@@ -46,7 +47,7 @@ function FindingTitle({ f, compact }: { f: Finding; compact?: boolean }) {
         )}
       </button>
       <div className="relative z-10 mt-1.5 w-fit">
-        <CitationChip label={sourceLabel(f, state.documents)} />
+        <CitationChip className="sk" label={sourceLabel(f, state.documents)} />
       </div>
     </div>
   )
@@ -54,10 +55,16 @@ function FindingTitle({ f, compact }: { f: Finding; compact?: boolean }) {
 
 function OpenDetails({ id }: { id: string }) {
   const { openDrawer } = useUi()
+  const { state } = useReview()
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <Button variant="ghost" size="icon-sm" className="relative z-10" onClick={() => openDrawer(id)} aria-label={`Open details for ${id}`}>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          className="sk-hide relative z-10"
+          disabled={state.phase !== "ready"}
+          onClick={() => openDrawer(id)} aria-label={`Open details for ${id}`}>
           <PanelRight aria-hidden />
         </Button>
       </TooltipTrigger>
@@ -69,15 +76,15 @@ function OpenDetails({ id }: { id: string }) {
 const columns = col.columns([
   col.accessor("id", {
     header: "ID",
-    cell: (info) => <span className="font-mono text-xs text-muted-foreground">{info.getValue()}</span>,
+    cell: (info) => <span className="sk font-mono text-xs text-muted-foreground">{info.getValue()}</span>,
   }),
   col.accessor("title", { header: "Finding", cell: (info) => <FindingTitle f={info.row.original} /> }),
-  col.accessor("severity", { header: "Severity", cell: (info) => <SeverityBadge severity={info.getValue()} /> }),
+  col.accessor("severity", { header: "Severity", cell: (info) => <SeverityBadge className="sk" severity={info.getValue()} /> }),
   col.accessor("category", {
     header: "Category",
-    cell: (info) => <span className="text-[13px] text-text-secondary">{CATEGORY_LABEL[info.getValue()]}</span>,
+    cell: (info) => <span className="sk text-[13px] text-text-secondary">{CATEGORY_LABEL[info.getValue()]}</span>,
   }),
-  col.accessor("status", { header: "Status", cell: (info) => <StatusBadge status={info.getValue()} /> }),
+  col.accessor("status", { header: "Status", cell: (info) => <StatusBadge className="sk" status={info.getValue()} /> }),
   col.display({ id: "actions", header: () => <span className="sr-only">Actions</span>, cell: (info) => <OpenDetails id={info.row.original.id} /> }),
 ])
 
@@ -112,10 +119,15 @@ function FilterChip({ value, label, count }: { value: StatusFilter; label: strin
 export function FindingsTable() {
   const { state, dispatch } = useReview()
   const rows = useMemo(() => visibleFindings(state), [state])
-  const all = activeFindings(state)
-  const table = useTable({ features, columns, data: rows, getRowId: (r) => r.id })
-  const analysing = state.phase === "analysing"
   const empty = state.scenario.emptyDataRoom
+  // Empty data room: the populated table renders invisibly underneath so the card keeps its size.
+  const ghostRows = useMemo(
+    () => (empty ? [...state.findings].sort((a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity]) : rows),
+    [empty, state.findings, rows],
+  )
+  const all = activeFindings(state)
+  const table = useTable({ features, columns, data: ghostRows, getRowId: (r) => r.id })
+  const pending = state.phase !== "ready"
   const critHigh = all.filter((f) => f.severity === "critical" || f.severity === "high").length
 
   return (
@@ -124,6 +136,7 @@ export function FindingsTable() {
       title="Key findings"
       ai
       description={empty ? "No findings yet" : `${all.length} AI-identified findings · ${needsReviewCount(state)} need human review`}
+      pending={pending}
       bodyClassName="px-0 sm:px-0 pb-3 sm:pb-3 gap-3"
     >
       <div className="flex flex-wrap items-center gap-2 px-5 sm:px-6" role="group" aria-label="Filter findings">
@@ -147,28 +160,22 @@ export function FindingsTable() {
         </div>
       </div>
 
-      {analysing ? (
-        <div className="space-y-2 px-5 sm:px-6" aria-hidden>
-          {Array.from({ length: 5 }, (_, i) => (
-            <Skeleton key={i} className="h-14 w-full" />
-          ))}
-        </div>
-      ) : rows.length === 0 ? (
+      {!empty && rows.length === 0 ? (
         <div className="mx-5 flex flex-col items-center gap-3 rounded-md border border-dashed border-border-strong bg-background px-4 py-10 text-center sm:mx-6">
           <SearchX aria-hidden className="size-6 text-muted-foreground" />
           <div>
-            <p className="text-sm font-medium text-foreground">{empty ? "No findings yet" : "No findings match these filters"}</p>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              {empty ? "Findings appear here after the data room has been analysed." : "Try a different status or category."}
-            </p>
+            <p className="text-sm font-medium text-foreground">No findings match these filters</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">Try a different status or category.</p>
           </div>
-          {!empty && (
-            <Button size="sm" variant="outline" onClick={() => dispatch({ type: "clear-filters" })}>
-              Clear filters
-            </Button>
-          )}
+          <Button size="sm" variant="outline" onClick={() => dispatch({ type: "clear-filters" })}>
+            Clear filters
+          </Button>
         </div>
       ) : (
+        <Reserve
+          active={empty}
+          overlayClassName="flex px-5 sm:px-6"
+          ghost={
         <>
           {/* Tablet & desktop: semantic table */}
           <div className="hidden md:block">
@@ -226,23 +233,33 @@ export function FindingsTable() {
                   )}
                 >
                   <div className="mb-2 flex items-center gap-2">
-                    <SeverityBadge severity={f.severity} />
-                    <span className="text-xs text-text-secondary">{CATEGORY_LABEL[f.category]}</span>
-                    <span className="ml-auto font-mono text-xs text-muted-foreground">{f.id}</span>
+                    <SeverityBadge className="sk" severity={f.severity} />
+                    <span className="sk text-xs text-text-secondary">{CATEGORY_LABEL[f.category]}</span>
+                    <span className="sk ml-auto font-mono text-xs text-muted-foreground">{f.id}</span>
                   </div>
                   <FindingTitle f={f} compact />
                   <div className="relative z-10 mt-2.5">
-                    <StatusBadge status={f.status} />
+                    <StatusBadge className="sk" status={f.status} />
                   </div>
                 </li>
               )
             })}
           </ul>
           <p className="px-5 pt-1 text-xs text-muted-foreground sm:px-6" aria-live="polite">
-            Showing {rows.length} of {all.length} · sorted by severity
+            Showing {ghostRows.length} of {all.length || ghostRows.length} · sorted by severity
             {state.categoryFilter !== "all" && ` · ${CATEGORY_LABEL[state.categoryFilter]} only`}
           </p>
         </>
+          }
+        >
+          <div className="flex w-full flex-col items-center justify-center gap-3 rounded-md border border-dashed border-border-strong bg-background px-4 py-10 text-center">
+            <SearchX aria-hidden className="size-6 text-muted-foreground" />
+            <div>
+              <p className="text-sm font-medium text-foreground">No findings yet</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">Findings appear here after the data room has been analysed.</p>
+            </div>
+          </div>
+        </Reserve>
       )}
     </SectionCard>
   )
