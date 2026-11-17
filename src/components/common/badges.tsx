@@ -50,7 +50,7 @@ interface CitationChipProps {
 /** Inline source reference. Interactive when it can open the cited evidence. */
 export function CitationChip({ label, onClick, className }: CitationChipProps) {
   const cls = cn(
-    "inline-flex items-center gap-1 rounded-sm border border-border bg-card px-1.5 py-0.5 font-mono text-[11px] leading-4 text-link",
+    "inline-flex min-h-6 max-w-full items-center gap-1 rounded-sm border border-border bg-card px-1.5 py-0.5 font-mono text-[11px] leading-4 text-link",
     onClick && "cursor-pointer transition-colors hover:border-link/50 hover:bg-accent",
     className,
   )

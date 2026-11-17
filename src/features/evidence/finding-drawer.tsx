@@ -25,7 +25,7 @@ export function FindingDrawer() {
         onCloseAutoFocus={restoreFocus}
         className={
           isPhone
-            ? "max-h-[92dvh] rounded-t-2xl border-border p-0"
+            ? "max-h-[calc(100dvh-env(safe-area-inset-top)-12px)] rounded-t-2xl border-border p-0 pb-[env(safe-area-inset-bottom)]"
             : "w-full gap-0 border-border p-0 data-[side=right]:w-full data-[side=right]:sm:max-w-[520px]"
         }
       >

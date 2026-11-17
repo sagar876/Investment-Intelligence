@@ -90,7 +90,7 @@ export function UploadDialog() {
               onDragLeave={() => setDragging(false)}
               onDrop={onDrop}
               className={cn(
-                "flex flex-col items-center gap-2 rounded-lg border border-dashed px-4 py-6 text-center transition-colors duration-200",
+                "flex min-w-0 flex-col items-center gap-2 rounded-lg border border-dashed px-3 py-4 text-center transition-colors duration-200 sm:px-4 sm:py-6",
                 dragging ? "border-ai-strong bg-ai-subtle" : "border-input bg-background",
               )}
             >
@@ -102,16 +102,20 @@ export function UploadDialog() {
               >
                 <CloudUpload aria-hidden className="size-5 text-primary" />
               </span>
-              <p className="text-sm text-foreground">
+              {/* Touch devices get a real button (native file picker); drag-and-drop copy only where a fine pointer exists. */}
+              <p className="hidden text-sm text-foreground pointer-fine:block">
                 Drag files here or{" "}
                 <button
                   type="button"
-                  className="cursor-pointer rounded-sm font-medium text-link underline-offset-4 hover:underline"
+                  className="inline-flex min-h-6 cursor-pointer items-center rounded-sm font-medium text-link underline-offset-4 hover:underline"
                   onClick={() => inputRef.current?.click()}
                 >
                   browse your computer
                 </button>
               </p>
+              <Button type="button" variant="outline" className="h-11 w-full max-w-xs pointer-fine:hidden" onClick={() => inputRef.current?.click()}>
+                Choose files
+              </Button>
               <p className="text-xs text-muted-foreground">PDF, Excel or Word · up to {MAX_FILE_MB} MB each</p>
               <input
                 ref={inputRef}
@@ -145,9 +149,9 @@ export function UploadDialog() {
 
             {pending.length > 0 ? (
               <>
-                <ul className="flex max-h-56 flex-col gap-2 overflow-y-auto" aria-label="Files selected for upload">
+                <ul className="flex min-w-0 flex-col gap-2" aria-label="Files selected for upload">
                   {pending.map((f) => (
-                    <li key={f.id} className="flex animate-fade-in items-center gap-2.5 rounded-md border border-border px-3 py-2.5">
+                    <li key={f.id} className="flex min-w-0 animate-fade-in items-center gap-2 rounded-md border border-border py-1.5 pr-1.5 pl-3">
                       <FileText aria-hidden className="size-4 shrink-0 text-text-secondary" />
                       <span className="min-w-0 flex-1 truncate text-[13px]" title={f.name}>
                         {f.name}
@@ -156,7 +160,8 @@ export function UploadDialog() {
                       <span className="text-xs text-muted-foreground tabular">{formatBytes(f.bytes)}</span>
                       <Button
                         variant="ghost"
-                        size="icon-xs"
+                        size="icon"
+                        className="size-9 shrink-0"
                         aria-label={`Remove ${f.name}`}
                         onClick={() => setPending((p) => p.filter((x) => x.id !== f.id))}
                       >
@@ -192,7 +197,7 @@ export function UploadDialog() {
                 style={{ width: `${batch.percent}%` }}
               />
             </div>
-            <ul className="flex max-h-72 flex-col gap-2 overflow-y-auto" aria-label="Upload progress by file">
+            <ul className="flex min-w-0 flex-col gap-2" aria-label="Upload progress by file">
               {batch.visible.map((i) => (
                 <UploadFileRow key={i.id} item={i} />
               ))}

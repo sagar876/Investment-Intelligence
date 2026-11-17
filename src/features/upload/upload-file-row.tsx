@@ -22,12 +22,12 @@ export function UploadFileRow({ item, compact = false }: { item: UploadItem; com
   return (
     <li
       className={cn(
-        "flex flex-col gap-1.5 rounded-md border px-3 transition-colors duration-300",
+        "flex min-w-0 flex-col gap-1.5 rounded-md border px-3 transition-colors duration-300",
         compact ? "py-2" : "py-2.5",
         item.status === "failed" ? "border-sev-critical/40 bg-sev-critical-subtle" : "border-border bg-card",
       )}
     >
-      <div className="flex items-center gap-2.5">
+      <div className="flex min-w-0 items-center gap-2">
         {item.status === "completed" ? (
           <span className="grid size-4 shrink-0 animate-pop place-items-center rounded-full bg-positive">
             <Check aria-hidden className="size-3 text-white" strokeWidth={3} />
@@ -45,16 +45,16 @@ export function UploadFileRow({ item, compact = false }: { item: UploadItem; com
         {item.source === "sample" && <span className="hidden text-[11px] font-medium text-ai sm:inline">Sample</span>}
         <span className="shrink-0 text-xs text-muted-foreground tabular">{formatBytes(item.bytes)}</span>
         {inFlight && (
-          <Button variant="ghost" size="icon-xs" aria-label={`Cancel upload of ${item.name}`} onClick={() => cancel(item.id)}>
+          <Button variant="ghost" size="icon-sm" className="-my-1 shrink-0" aria-label={`Cancel upload of ${item.name}`} onClick={() => cancel(item.id)}>
             <X aria-hidden />
           </Button>
         )}
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex min-w-0 flex-wrap items-center gap-2">
         <p
           id={statusId}
           className={cn(
-            "flex-1 text-xs tabular",
+            "min-w-0 flex-1 text-xs tabular",
             item.status === "failed" ? "font-medium text-sev-critical" : item.status === "completed" ? "text-positive" : "text-muted-foreground",
           )}
         >
