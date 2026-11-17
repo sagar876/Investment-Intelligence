@@ -1,4 +1,4 @@
-import { Building2, Check, ChevronDown, Clock, FlaskConical, Upload } from "lucide-react"
+import { Check, Clock, FlaskConical, Upload } from "lucide-react"
 import logoUrl from "@/assets/aurello-mark.png"
 import { Button } from "@/components/ui/button"
 import {
@@ -11,9 +11,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-import { ANALYST, COMPANY, LAST_UPDATED, OTHER_COMPANIES } from "@/data/meridian"
+import { ANALYST, LAST_UPDATED } from "@/data/meridian"
 import { useReview } from "@/state/review-context"
 import { useUi } from "@/state/ui-context"
+import { CompanySelector } from "./company-selector"
 
 export function BrandLogo() {
   return (
@@ -54,9 +55,13 @@ function AssessmentStatus() {
 function DemoMenu() {
   const { state, dispatch } = useReview()
   return (
-    <DropdownMenu>
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm" className="text-[#A9BDD1] hover:bg-white/8 hover:text-white">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-[#A9BDD1] hover:bg-white/8 hover:text-white aria-expanded:bg-white/10 aria-expanded:text-white"
+        >
           <FlaskConical aria-hidden />
           <span className="hidden xl:inline">Demo states</span>
           <span className="sr-only xl:hidden">Demo states</span>
@@ -99,33 +104,7 @@ export function AppHeader() {
         <span aria-hidden className="hidden h-5 w-px bg-white/15 xl:block" />
         <span className="hidden text-sm whitespace-nowrap text-[#A9BDD1] xl:block">Investment Intelligence</span>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="outline"
-              className="ml-1 hidden max-w-[300px] border-white/15 bg-white/5 text-[#EAF2F8] hover:border-white/30 hover:bg-white/10 hover:text-white sm:inline-flex"
-            >
-              <span className="sr-only">Company: </span>
-              <Building2 aria-hidden className="text-[#A9BDD1]" />
-              <span className="font-medium">{COMPANY.name}</span>
-              <span className="text-xs text-[#A9BDD1]">{COMPANY.country}</span>
-              <ChevronDown aria-hidden className="text-[#A9BDD1]" />
-              <span className="sr-only">, change company</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-64">
-            <DropdownMenuLabel>Assessments</DropdownMenuLabel>
-            <DropdownMenuItem>
-              <Check aria-hidden /> {COMPANY.name} · {COMPANY.country}
-            </DropdownMenuItem>
-            {OTHER_COMPANIES.map((c) => (
-              <DropdownMenuItem key={c.name} disabled>
-                <span className="size-4" /> {c.name} · {c.country}
-                <span className="ml-auto text-xs">Demo only</span>
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <CompanySelector />
 
         <div className="flex-1" />
 

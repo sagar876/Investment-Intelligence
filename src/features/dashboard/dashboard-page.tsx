@@ -43,7 +43,7 @@ export function DashboardPage() {
             Illustrative demo — Meridian Technologies and all financials, AI summaries and findings are fictional. No real AI or client data is used.
           </p>
         </aside>
-        <div className={`${container} relative pt-8 pb-24 sm:pt-10 lg:pb-28`}>
+        <div className={`${container} relative pt-8 pb-24 sm:pt-[76px] lg:pb-28`}>
           <CompanyOverview />
         </div>
       </div>
