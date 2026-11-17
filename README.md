@@ -26,8 +26,8 @@ Requires Node 20.19+ (built with Node 24).
 4. **Verify** — select a finding: the evidence panel shows the AI rationale, verbatim excerpts with document + page, and evidence strength with its reason. Citation chips in the AI summary jump straight to the evidence.
 5. **Decide** — *Accept* (undoable toast), *Reject* (reason required, validated) or *Flag* (note + optional owner). Open the details drawer for tabs: Evidence / AI rationale / audit History.
 6. **Complete** — decide F-01, F-02, F-03 → *Submit to IC* unlocks (and pulses briefly); confirm with an explicit attestation.
-7. **New evidence** — *Upload documents* → *Use 3 sample documents*: per-file processing, a scanned PDF fails with a recoverable *Retry with OCR*, and a **scripted** analysis of the sample contracts adds High finding **F-07**, which re-locks IC submission. Uploading your own file is honest about the demo: it is validated (type ≤ 50 MB) and listed as *Demo · not analysed*, and no findings are invented from it.
-8. **Demo states** menu (header) — replay loading + AI analysis, empty data room, chart data error, reset.
+7. **New evidence (background upload)** — *Upload documents* → *Use 3 sample documents* → *Start upload* → **Run in background**. The dialog closes and a docked *Upload activity* panel (bottom-left) shows count, current file, overall % and per-file detail; keep reviewing findings while it runs. Hide it to a pill and reopen any time. The scanned lease is interrupted at 42% (simulated) — **Retry** restarts only that file. One toast confirms completion; the files appear in the data room as *Ready for analysis*; **Run AI analysis** plays the processing stages and the scripted analysis of the sample contracts raises **F-07**, which re-locks IC submission. Your own files are validated (type, ≤ 50 MB, duplicates) and listed, but never read — they end as *Demo · contents not read* and no findings are invented.
+8. **Demo states** menu (header) — replay loading + AI analysis, empty data room, chart data error, simulate a network failure on the next upload, reset. Switching states never moves the layout (see Quality).
 
 ## Stack
 
@@ -45,6 +45,7 @@ src/
     review-reducer.ts       pure reducer + selectors (review gate, filters, audit trail) — unit-tested
     review-context.tsx      provider; simulated load/analysis phases
     ui-context.tsx          overlay orchestration, undoable decisions, focus restoration
+    upload-context.tsx      simulated background upload manager (queue, concurrency, retry, cancel, one-time toasts)
   features/<region>/        one folder per dashboard region (header, overview, kpis, summary,
                             financials, risk, dataroom, findings, evidence, review, upload, dashboard)
   components/common/        domain primitives mirroring Figma components (badges, citation chip,
@@ -81,10 +82,11 @@ Blue = human decisions and actions; teal/aqua = AI. Aqua (`#22D3C5`, 1.9:1 on wh
 | Keyboard | skip link first; focus trapped in overlays and restored to the opener; visible 2px focus ring; `scroll-padding-top` for the sticky header (2.4.11) |
 | Web vitals (production build, local) | LCP ≈ 1.1–1.3 s · CLS ≈ 0.01 · TBT ≈ 8 ms desktop / ≈ 240 ms at 4× CPU throttle |
 | Bundle | critical JS ≈ 165 KB gzip; Recharts (106 KB) and overlays/forms (≈ 30 KB) lazy-loaded |
-| Responsive | no horizontal overflow at 390 / 834 / 1024 / 1280 / 1440 |
-| Tests | 14 reducer tests (review gate, flag semantics, submission lock, undo, audit trail, uploads, filters) |
+| Responsive | no horizontal overflow at 360 / 390 / 768 / 834 / 1024 / 1280 / 1440 |
+| Layout stability | **0 px shift** in every section across loading, analysing, empty, chart-error and populated states at all 7 widths — in-place skeletons (`data-pending` + `.sk`) and a `Reserve` primitive that keeps populated geometry under empty/error states |
+| Tests | 15 reducer tests (review gate, flag semantics, submission lock, undo, audit trail, uploads & analysis, filters) |
 
 ## Known limitations
 
 - Frontend-only; state resets on reload. All document contents and findings are hardcoded fictional data. Files you upload are validated (type/size) but never read; they appear as *Demo · not analysed*. Only the built-in sample documents produce a (scripted) finding, and its evidence cites the sample contract — never a file you supplied.
-- The Figma file was built before the brand pass; the starter-plan MCP call limit blocked the follow-up. [`docs/figma/rebrand-to-aurello.js`](docs/figma/rebrand-to-aurello.js) applies the aurelloai.com palette and type to every page in one call once access resets. Interaction-state and responsive frames are specified in the design doc and implemented in code.
+- The Figma file was built before the brand pass and the later interaction work; the Starter-plan MCP call limit blocked every follow-up call (last attempt 17 Nov 2026). [`docs/figma/rebrand-to-aurello.js`](docs/figma/rebrand-to-aurello.js) applies the aurelloai.com palette and type to every page in one call once access resets. Still to add in Figma once access resets: interaction-state frames (upload dialog, background upload panel, processing, evidence drawer, accept/reject/flag dialogs, submit-to-IC, loading/empty/error), tablet + mobile frames, the non-modal company selector, and the dark hero band. All are implemented in code and specified in the design doc.
