@@ -146,7 +146,7 @@ Display 28/36 semibold · H1 22/30 semibold · H2 16/24 semibold · Body 14/20 r
 Enterprise value $325m (4.3× revenue, 24.1× EBITDA FY24).
 AI-suggested recommendation: **Proceed to confirmatory diligence — with conditions** (confidence: Moderate).
 
-Risk assessment: Financial **Medium** · Regulatory **High** · Operational **Medium** · Market **Low**.
+Risk assessment (score/100): Regulatory **High 72** · Financial **Medium 58** · Market **Medium 48** · Operational **Medium 41** · Overall **Elevated 56**.
 
 Findings:
 | ID | Title | Severity | Category | Source | Status |
@@ -175,3 +175,39 @@ Findings:
 ## 14. Non-goals
 
 Real AI calls, persistence beyond session, auth, multiple routes, dark mode, multi-company data (selector shows Meridian + 2 disabled placeholders).
+
+## 15. Figma file & build status (2026-11-17)
+
+File: https://www.figma.com/design/OxOBImRVz6XYbV9s0OCLOL
+
+| Page | Status |
+|------|--------|
+| 00 — Product Brief | Done: problem, persona, 5 questions, principles→decisions, journey, IA, states, a11y |
+| 01 — Design System | Done: 4 variable collections (26 primitives, 29 semantic colours with CSS code syntax, 8 spacing, 4 radius), 12 text styles, 3 effect styles; components: 23 icons, Button (16 variants, label/icon props), Badge/Severity, Badge/Status, AI Label, Citation Chip, Evidence Strength, Input, Card Header, KPI Tile, Risk Row, Table Header, Finding Row (3 states), Evidence Item |
+| 02 — Dashboard | Desktop 1440 done (all sections A–H). Interaction-state and responsive frames **not built**: blocked by Figma Starter MCP tool-call limit |
+
+Known Figma defect: icon on Primary buttons ("Accept finding", "Submit to IC") lost its white override after instance swap; fix by setting the icon stroke to `text/on-accent`.
+
+## 16. Design review (pre-implementation)
+
+Reviewed against the 1440 composition screenshots.
+
+**Working well**
+- Hierarchy follows the analyst's five questions top-to-bottom: recommendation → KPIs → summary/risk → findings → evidence.
+- AI transparency: every AI region carries the violet "AI-generated · Demo data" marker; every AI claim has a citation chip; the evidence panel shows *why* (rationale) before *what to do* (decision).
+- Human-in-the-loop: "Submit to IC" is gated with the reason stated next to it; decisions are logged.
+- Severity/status never rely on colour alone (icon + label); all text pairs ≥ 4.5:1; input boundaries 3.5:1.
+- Financial comprehension: direct value labels, EBITDA margin printed under each year, Chart/Table toggle as accessible alternative; DSO deterioration called out.
+
+**Issues → resolution in code**
+1. *False affordance:* "Confidence: Moderate" is a bordered pill that reads like a button → render as plain text with a label.
+2. *Redundant action:* "Upload documents" appears in header and Data room → keep the header action; Data room gets a text link.
+3. *Disabled Submit:* 50% opacity is exempt from contrast, but disabled buttons are unfocusable → use `aria-disabled` + `aria-describedby` pointing to the gate hint so keyboard/SR users learn why.
+4. *Risk rows are filters:* need a visible selected state and `aria-pressed`; Figma only implies it with a tint.
+5. *Uneven row heights:* long finding titles wrap → clamp to 2 lines with full title in tooltip and drawer.
+6. *Column height imbalance:* evidence panel is taller than the findings table → make it sticky with internal scroll on desktop.
+7. *Header density at < 1280px:* collapse "Updated…" into a tooltip and the analyst name into the avatar.
+8. *Focus order:* DOM order must match visual order (findings before evidence); selecting a row announces "Evidence updated for F-0x" via `aria-live`.
+9. *Sticky header vs focus (2.4.11):* set `scroll-padding-top` to header height.
+
+**States & responsive** (not drawn in Figma, specified here and built in code with the same components): details drawer (Sheet, 480px), upload dialog, processing with per-file status + failed-file Retry, reject dialog (reason ≥ 10 chars), flag dialog (note + optional owner), submit-to-IC confirmation, undo toast, empty (no docs / no filter match), skeleton loading, chart error → table fallback. Tablet 834: 8-col, analysis columns stack, evidence opens in drawer. Mobile 390: single column, KPI 2×2, findings as cards, evidence in bottom sheet.
